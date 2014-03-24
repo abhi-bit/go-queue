@@ -31,7 +31,7 @@ func Connect(clusterURL string) (Node, error) {
 
 	resp, err := http.Get(clusterURL)
 	if err != nil {
-        return Node{}, err
+		return Node{}, err
 	}
 
 	//Need to handle this in-case cluster manager dies

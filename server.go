@@ -94,19 +94,19 @@ func Dequeue(w http.ResponseWriter, req *http.Request) {
 }
 
 func AllDocs(w http.ResponseWriter, req *http.Request) {
-    w.Header().Set("Content-Type", "application/json; charset=utf-8")
-    w.WriteHeader(200)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-    items := make([]string, 0)
-    qi := db.Next(true)
-    for qi != nil {
-        items = append(items, string(qi.Data))
-        qi = db.Next(true)
-    }
+	items := make([]string, 0)
+	qi := db.Next(true)
+	for qi != nil {
+		items = append(items, string(qi.Data))
+		qi = db.Next(true)
+	}
 
-    itemsJson, _ := json.Marshal(items)
+	itemsJson, _ := json.Marshal(items)
 
-    fmt.Fprint(w, fmt.Sprintf("{\"success\":true,\"data\":%s,\"message\":\"worked\"}", string(itemsJson)))
+	fmt.Fprint(w, fmt.Sprintf("{\"success\":true,\"data\":%s,\"message\":\"worked\"}", string(itemsJson)))
 }
 
 func Statistics(w http.ResponseWriter, req *http.Request) {
@@ -146,7 +146,7 @@ func main() {
 	http.HandleFunc("/enqueue", Enqueue)
 	http.HandleFunc("/dequeue", Dequeue)
 	http.HandleFunc("/alldocs", AllDocs)
-    http.HandleFunc("/statistics", Statistics)
+	http.HandleFunc("/statistics", Statistics)
 	http.HandleFunc("/version", Version)
 	http.HandleFunc("/", HealthCheck)
 

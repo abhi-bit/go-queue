@@ -1,10 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
-    "encoding/json"
 	"log"
 	"net/http"
 	"runtime"
@@ -19,7 +19,7 @@ var (
 	port    int
 	logPath string
 	hosts   string
-	nodes = make(map[string]NodeStatus)
+	nodes   = make(map[string]NodeStatus)
 )
 
 func init() {
@@ -35,22 +35,22 @@ func init() {
 }
 
 type NodeStatus struct {
-    status bool
-    retries int
+	status  bool
+	retries int
 }
 
 func Nodes(w http.ResponseWriter, req *http.Request) {
-    w.Header().Set("Content-Type", "application/json; charset=utf-8")
-    w.WriteHeader(200)
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
 
-    onlineNodes := make([]string, 0)
-    for node, _ := range(nodes){
-        onlineNodes = append(onlineNodes, node)
-    }
+	onlineNodes := make([]string, 0)
+	for node, _ := range nodes {
+		onlineNodes = append(onlineNodes, node)
+	}
 
-    oNodes, _ := json.Marshal(onlineNodes)
+	oNodes, _ := json.Marshal(onlineNodes)
 
-    fmt.Fprintf(w, fmt.Sprintf("{\"nodes\":%s}", oNodes))
+	fmt.Fprintf(w, fmt.Sprintf("{\"nodes\":%s}", oNodes))
 }
 
 func main() {
@@ -65,7 +65,7 @@ func main() {
 
 		if err != nil {
 			clog.Error(err)
-            nodes[serverURL] = NodeStatus{status:false, retries:0}
+			nodes[serverURL] = NodeStatus{status: false, retries: 0}
 			break
 		}
 
@@ -73,28 +73,28 @@ func main() {
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if string(body) == "1" {
-            nodes[serverURL] = NodeStatus{status:true, retries:0}
+			nodes[serverURL] = NodeStatus{status: true, retries: 0}
 		} else {
-            nodes[serverURL] = NodeStatus{status:false, retries:0}
+			nodes[serverURL] = NodeStatus{status: false, retries: 0}
 		}
 	}
 
 	fmt.Printf("%#v\n", nodes)
 
 	//Polling nodes, needs cleanup
-    go func() {
+	go func() {
 		for {
 			for node, _ := range nodes {
 				resp, err := http.Get(node)
 				if err != nil {
 					clog.Error(err)
-                    retryCount := nodes[node].retries + 1
+					retryCount := nodes[node].retries + 1
 
-                    if retryCount <= 3 {
-                        nodes[node] = NodeStatus{status:false,retries:retryCount}
-				    } else {
-                        delete(nodes, node)
-                    }
+					if retryCount <= 3 {
+						nodes[node] = NodeStatus{status: false, retries: retryCount}
+					} else {
+						delete(nodes, node)
+					}
 
 					break
 				}
@@ -103,23 +103,22 @@ func main() {
 
 				body, err := ioutil.ReadAll(resp.Body)
 				if string(body) == "1" {
-                    nodes[node] = NodeStatus{status:true, retries:0}
+					nodes[node] = NodeStatus{status: true, retries: 0}
 				} else {
-                    retryCount := nodes[node].retries + 1
-                    if retryCount <= 3 {
-                        nodes[node] = NodeStatus{status:false,retries:retryCount}
-				    } else {
-                        delete(nodes, node)
-                    }
-                }
+					retryCount := nodes[node].retries + 1
+					if retryCount <= 3 {
+						nodes[node] = NodeStatus{status: false, retries: retryCount}
+					} else {
+						delete(nodes, node)
+					}
+				}
 			}
 			fmt.Printf("%#v\n", nodes)
 			time.Sleep(time.Second)
 		}
 	}()
 
-    http.HandleFunc("/nodes", Nodes)
-
+	http.HandleFunc("/nodes", Nodes)
 
 	err := http.ListenAndServe(fmt.Sprintf("%s:%d", address, port), nil)
 	if err != nil {
